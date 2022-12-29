@@ -9,7 +9,7 @@ make
 ./social_network --login {database login} --password {database password} --database {database} --init_db
 
 
-http://localhost:8000/user/search
+http://localhost:8000/
 ```
 
 Requirements:
