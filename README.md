@@ -2,21 +2,9 @@
 
 Запуск: 
 ```
-mkdir build
-cd build
-cmake ..
-make
-./social_network --login {database login} --password {database password} --database {database} --init_db
+docker-compose rm -f
+docker-compose pull
+docker-compose up --build
 
-
-http://localhost:8000/
-```
-
-Requirements:
-
-```
-MySQL-8.0.31
-poco-1.12.2
-Boost-1.80.0 
-mstch-1.0.2
+http://localhost:9000/
 ```

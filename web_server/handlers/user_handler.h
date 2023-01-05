@@ -167,7 +167,6 @@ public:
                         return;
                     }
                     make_search_response(users, response);
-                    // response.redirect("/user/search?login=" + user.get_email() + "&password=" + user.get_password());
                     return;
                 }
                 catch (std::exception &e)
