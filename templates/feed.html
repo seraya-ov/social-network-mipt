@@ -10,25 +10,19 @@
 <body>
     <h1>User Information</h1>
     <ul>
-        <li>First Name: {{first_name}}</li>
-        <li>Last Name: {{last_name}}</li>
-        <li>Login: {{email}}</li>
+        <li>Logged in as: {{login}}</li>
     </ul>
     <h1>Chats</h1>
     <div style="height:400px;width:1000px;border:1px solid #ccc;overflow:auto;">
         {{#chats}}{{> chat}}{{/chats}}
     </div>
     <h1>Chat With</h1>
-    <form action="/user/search" enctype="multipart/form-data" method="POST">
-        <!-- <label for="first_name">First name:</label><br>
-        <input type="text" id="first_name" name="first_name"><br>
-        <label for="last_name">Last name:</label><br>
-        <input type="text" id="last_name" name="last_name"><br> -->
-        <label for="email">Login:</label><br>
-        <input type="text" id="email" name="email"><br>
+    <form action="/messages/send" enctype="multipart/form-data" method="POST">
+        <label for="login">Login:</label><br>
+        <input type="text" id="login" name="login"><br>
         <label for="text">Message:</label><br>
         <input type="text" id="text" name="text"><br>
-        <input type="hidden" id="id" name="id" value={{id}}>
+        <input type="hidden" id="sender" name="sender" value={{id}}>
         <input type="submit" value="Send"><br>
     </form>
 </body>

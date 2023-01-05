@@ -165,7 +165,7 @@ namespace database
             std::vector<std::pair<Message, std::string>> result;
             Message m;
             std::string s;
-            select << "SELECT m.id, m.sender_id, m.recipient_id, Unix_Timestamp(m.timestamp) as timestamp, text, u.email FROM (Message m left join User u on m.sender_id = u.id) where (m.sender_id = ? and m.recipient_id = ?) or (m.sender_id = ? and m.recipient_id = ?) order by timestamp",
+            select << "SELECT m.id, m.sender_id, m.recipient_id, Unix_Timestamp(m.timestamp) as timestamp, text, u.login FROM (Message m left join User u on m.sender_id = u.id) where (m.sender_id = ? and m.recipient_id = ?) or (m.sender_id = ? and m.recipient_id = ?) order by timestamp",
                 into(m._id),
                 into(m._sender_id),
                 into(m._recipient_id),
@@ -236,11 +236,9 @@ namespace database
             Statement select(session);
             std::vector<database::User> result;
             database::User u;
-            select << "SELECT distinct id, first_name, last_name, email FROM User where id in (select sender_id from Message where recipient_id = ? union select recipient_id from Message where sender_id = ?);",
+            select << "SELECT distinct id, login FROM User where id in (select sender_id from Message where recipient_id = ? union select recipient_id from Message where sender_id = ?);",
                 into(u.id()),
-                into(u.first_name()),
-                into(u.last_name()),
-                into(u.email()),
+                into(u.login()),
                 use(sender_id),
                 use(sender_id),
                 range(0, 1); //  iterate over result set one row at a time

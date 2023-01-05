@@ -4,6 +4,8 @@ project(hl_event_server C CXX)
 
 SET (EXAMPLE_BINARY "social_network")
 
+# list(APPEND CMAKE_PREFIX_PATH "/usr/lib")
+
 find_package(OpenSSL)
 find_package(GTest REQUIRED)
 find_package(Threads)
@@ -17,12 +19,19 @@ if(NOT ${Poco_FOUND})
     message(FATAL_ERROR "Poco C++ Libraries not found.")
 endif()
 
+# include_directories(${Poco_INCLUDE_DIRS})
+# include_directories(${GTEST_INCLUDE_DIRS})
+# include_directories("/opt/homebrew/include")
+# include_directories(${Boost_INCLUDE_DIR})
+# link_directories("/usr/local/lib")
+# link_directories("/opt/homebrew/lib")
+
 include_directories(${Poco_INCLUDE_DIRS})
 include_directories(${GTEST_INCLUDE_DIRS})
-include_directories("/opt/homebrew/include")
+include_directories("/usr/include/mysql")
+include_directories("/usr/local/include/mysql")
 include_directories(${Boost_INCLUDE_DIR})
-link_directories("/usr/local/lib")
-link_directories("/opt/homebrew/lib")
+link_directories("/usr/lib")
 
 add_executable(${EXAMPLE_BINARY} main.cpp 
                                  config/config.cpp 

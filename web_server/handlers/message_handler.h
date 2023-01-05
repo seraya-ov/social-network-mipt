@@ -69,7 +69,7 @@ private:
             });
         }
         mstch::map context{
-            {"email", user_recipient.get_email()},
+            {"login", user_recipient.get_login()},
             {"id", std::to_string(user_sender.get_id())},
             {"rec_id", std::to_string(user_recipient.get_id())},
             {"messages", messages}
@@ -139,16 +139,30 @@ public:
             return;
         }
         else if (check_uri(uri,"/messages/send") && 
-                 form.has("sender") && form.has("recipient") && form.has("text") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
+                 form.has("sender") && (form.has("recipient") || form.has("login")) && form.has("text") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
         {
             database::Message message;
+            if (!form.has("recipient")) {
+                auto ids = database::User::search_id(form.get("login"));
+                if (ids.size()) {
+                    message.recipient_id() = ids[0];
+                }
+                else {
+                    response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
+                    std::ostream &ostr = response.send();
+                    ostr << "request error";
+                    response.send();
+                }
+            }
+            else {
+                message.recipient_id() = std::stol(form.get("recipient"));
+            }
             message.sender_id() = std::stol(form.get("sender"));
-            message.recipient_id() = std::stol(form.get("recipient"));
             message.text() = form.get("text");
             try
             {
                 message.save_to_mysql();
-                response.redirect("/messages/chat?sender=" + form.get("sender") + "&recipient=" + form.get("recipient"));
+                response.redirect("/messages/chat?sender=" + std::to_string(message.get_sender_id()) + "&recipient=" + std::to_string(message.get_recipient_id()));
                 return;
             }
             catch (...)

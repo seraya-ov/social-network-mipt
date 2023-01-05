@@ -51,17 +51,17 @@ using Poco::Util::ServerApplication;
 class UserHandler : public HTTPRequestHandler
 {
 private:
-    bool check_email(const std::string &email, std::string &reason)
+    bool check_login(const std::string &login, std::string &reason)
     {
-        if (email.find(' ') != std::string::npos)
+        if (login.find(' ') != std::string::npos)
         {
-            reason = "EMail can't contain spaces";
+            reason = "Login can't contain spaces";
             return false;
         }
 
-        if (email.find('\t') != std::string::npos)
+        if (login.find('\t') != std::string::npos)
         {
-            reason = "EMail can't contain spaces";
+            reason = "Login can't contain spaces";
             return false;
         }
 
@@ -83,15 +83,13 @@ private:
         mstch::array recipients;
         for (database::User u: users) {
             recipients.push_back(mstch::map{
-                {"chat", u.get_email()},
+                {"chat", u.get_login()},
                 {"recipient", std::to_string(u.get_id())}
             });
         }
         mstch::map context{
-            {"first_name", user.get_first_name()},
-            {"last_name", user.get_last_name()},
             {"id", std::to_string(user.get_id())},
-            {"email", user.get_email()},
+            {"login", user.get_login()},
             {"chats", recipients}
         };
         return mstch::render(view, context, {{"chat", chat_view}});
@@ -140,68 +138,18 @@ public:
                 return;
             }
         }
-        else if (check_uri(uri,"/user/search"))
-        {
-            try
-            {
-                std::vector<database::User> users;
-                if (form.has("email")) {
-                    std::string email = form.get("email");
-                    users = database::User::search(email);
-                    if (users.empty()) {
-                        send_not_found(response);
-                    }
-                }  
-                else if (form.has("first_name") && form.has("last_name")) {
-                    std::string fn = form.get("first_name");
-                    std::string ln = form.get("last_name");
-                    users = database::User::search(fn, ln);
-                    if (users.size() != 1) {
-                        send_not_found(response);
-                    }
-                }
-                if (users.size()) {
-                    if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST && form.has("text") && form.has("id")) {
-                        Poco::Net::HTTPRequest send_request(Poco::Net::HTTPRequest::HTTP_POST, "/messages/send", Poco::Net::HTTPMessage::HTTP_1_1);
-                        HTMLForm send_form;
-                        send_form.set("sender", form.get("id"));
-                        send_form.set("recipient", std::to_string(users[0].get_id()));
-                        send_form.set("text", form.get("text"));
-                        send_form.prepareSubmit(send_request);
-
-                        Poco::Net::HTTPClientSession *session = new Poco::Net::HTTPClientSession(_host, _port);
-                        send_form.write(session->sendRequest(send_request));
-                        Poco::Net::HTTPResponse res;
-                        session->receiveResponse(res);
-                        users = {database::User::read_by_id(std::stol(form.get("id")))};
-                    }
-                    make_search_response(users, response);
-                }
-            }
-            catch (...)
-            {
-                send_not_found(response);
-                return;
-            }
-            return;
-        }
         else if (check_uri(uri,"/user/add") && 
-                 form.has("email") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
+                 form.has("login") && form.has("password") && request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST)
         {
             database::User user;
-            if (form.has("first_name")) {
-                user.first_name() = form.get("first_name");
-            }
-            if (form.has("last_name")) {
-                user.last_name() = form.get("last_name");
-            }
-            user.email() = form.get("email");
+            user.login() = form.get("login");
+            user.password() = form.get("password");
 
             bool check_result = true;
             std::string message;
             std::string reason;
 
-            if (!check_email(user.get_email(), reason))
+            if (!check_login(user.get_login(), reason))
             {
                 check_result = false;
                 message += reason;
@@ -212,18 +160,21 @@ public:
             {
                 try
                 {
-                    auto users = database::User::search(user.get_email());
+                    auto users = database::User::search(user.get_login(), user.get_password());
                     if (users.empty()) {
                         user.save_to_mysql();
+                        make_search_response({user}, response);
+                        return;
                     }
-                    response.redirect("/user/search?email=" + user.get_email());
+                    make_search_response(users, response);
+                    // response.redirect("/user/search?login=" + user.get_email() + "&password=" + user.get_password());
                     return;
                 }
-                catch (...)
+                catch (std::exception &e)
                 {
                     response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
                     std::ostream &ostr = response.send();
-                    ostr << "database error";
+                    ostr << "database error" << ' ' << e.what();
                     response.send();
                     return;
                 }
